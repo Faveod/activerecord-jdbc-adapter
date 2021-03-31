@@ -185,6 +185,7 @@ module Arel
         limitone = node_value(o.limit) == 1
         if distinct && oneasone && limitone && !o.offset
           core.projections = [Arel.sql("TOP(1) 1 AS [one]")]
+          o.orders = []
           o.limit = nil
         end
       end
