@@ -182,7 +182,7 @@ module Arel
         core = o.cores.first
         distinct = Nodes::Distinct === core.set_quantifier
         oneasone = core.projections.all? { |x| x == ActiveRecord::FinderMethods::ONE_AS_ONE }
-        limitone = [nil, 0, 1].include? node_value(o.limit)
+        limitone = node_value(1)
         if distinct && oneasone && limitone && !o.offset
           core.projections = [Arel.sql("TOP(1) 1 AS [one]")]
           o.limit = nil
