@@ -1,6 +1,3 @@
-# NOTE: this code was take from the **sqlserver** adapter and adapted to work
-# with this adapter.
-#
 module Arel
   module Visitors
     class SQLServer < Arel::Visitors::ToSql
@@ -17,13 +14,12 @@ module Arel
       # SQLServer ToSql/Visitor (Overides)
 
       def visit_Arel_Nodes_BindParam o, collector
-        # collector.add_bind(o) { |i| "@#{i-1}" }
-        collector.add_bind(o.value) { |i| '?' }
+        collector.add_bind(o.value) { |i| "@#{i-1}" }
       end
 
       def visit_Arel_Nodes_Bin o, collector
         visit o.expr, collector
-        collector << " #{ActiveRecord::ConnectionAdapters::MSSQLAdapter.cs_equality_operator} "
+        collector << " #{ActiveRecord::ConnectionAdapters::SQLServerAdapter.cs_equality_operator} "
       end
 
       def visit_Arel_Nodes_UpdateStatement(o, a)
@@ -188,12 +184,7 @@ module Arel
         oneasone = core.projections.all? { |x| x == ActiveRecord::FinderMethods::ONE_AS_ONE }
         limitone = [nil, 0, 1].include? node_value(o.limit)
         if distinct && oneasone && limitone && !o.offset
-          # NOTE: part clears the limit part of the query but the bind parameter
-          # is still hanging around in active record, this issue makes
-          # the prepared statement to fails with "index i is out of range"
-          # As a quick fix is just add the bind marker as parameter of TOP
-          # which always be one.
-          core.projections = [Arel.sql("TOP(?) 1 AS [one]")]
+          core.projections = [Arel.sql("TOP(1) 1 AS [one]")]
           o.limit = nil
         end
       end
@@ -211,8 +202,6 @@ module Arel
 
       def primary_Key_From_Table t
         return unless t
-        # column_name = schema_cache.primary_keys(t.name) || column_cache(t.name).first.try(:second).try(:name)
-        # NOTE: for table name aliases columns_hash('table_alias')  requires to return an empty hash.
         column_name = @connection.schema_cache.primary_keys(t.name) ||
           @connection.schema_cache.columns_hash(t.name).first.try(:second).try(:name)
         column_name ? t[column_name] : nil
